@@ -29,24 +29,26 @@ class MinecraftTileLayer extends TileLayer {
     getTileUrl(coords) {
         // Invert zoom since 0 = 1:1, 1 = 2:1 etc
         const zoomFolder = this.options.maxNativeZoom - coords.z;
-        
+        const subdomains = this.options.subdomains;
+        const index = Math.abs(coords.x + coords.y) % subdomains.length;       
+
         return Util.template(this._url, {
             z: zoomFolder,
             x: coords.x*512*(2**zoomFolder), // since tiles use top left coordinate as name
-            y: coords.y*512*(2**zoomFolder)
+            y: coords.y*512*(2**zoomFolder),
+            s: subdomains[index]
         });
     }
-    
 }
 
-new MinecraftTileLayer('map/{z}/{x}_{y}.png', {
+new MinecraftTileLayer('https://{s}.aomc-map.game.algot.net/map/{z}/{x}_{y}.png', {
     maxNativeZoom: 9,
     minNativeZoom: 0,
     maxZoom: 15,
     minZoom: 0,
     tileSize: 512,
-    noWrap: true,
-    attribution: '©AOMC Players'
+    attribution: '©AOMC Players',
+    subdomains: "abcd",
 }).addTo(map);
 
 new Control.Scale({imperial: false}).addTo(map)

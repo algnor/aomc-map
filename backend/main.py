@@ -11,7 +11,11 @@ frontend = Path("/data/frontend")
 
 app.mount("/map", StaticFiles(directory=mapPath))
 app.mount("/static", StaticFiles(directory=staticPath))
-app.mount("/", StaticFiles(directory=frontend, html=True, check_dir=False))
+try:
+    # this will fail in dev mode, but we dont care since it wont be used then
+    app.mount("/", StaticFiles(directory=frontend, html=True))
+except:
+    pass
 
 @app.get("hello")
 def hello():
