@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>frontend</title>
+</head>
+
+<body>
+  <div id="map">
+  </div>
+  <div class="infoBox">
+    <div class="infoSide">
+      <div class="info" id="coordText">x: ??? z: ??</div>
+      <div class="info" id="scaleText">zoom: </div>
+    </div>
+    <div class="infoSide" id="infoCenter">
+      <p class="info">----></p>
+      <p class="info" id="infoStop">(stop)</p>
+    </div>
+    <div class="infoSide" id="infoRight">
+      <div class="info" id="userCoordText"></div>
+      <div class="info" id="userCoordDistanceText"></div>
+      <div class="info" id="userCoordDistanceText2"></div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+  }
+
+  #map {
+    background-color: black;
+    flex-grow: 1;
+  }
+
+  .infoBox {
+    top: 0px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 30rem;
+    margin-inline: auto;
+    color: white;
+    position: absolute;
+    z-index: 1000;
+    font-family: 'MinecraftFont';
+    pointer-events: none;
+    
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+  }
+
+  .info {
+    pointer-events: all;
+    margin: 0 auto;
+    font-size: larger;
+    text-align: center;
+    padding: 0.25rem;
+    background-color: rgba(0, 0, 0, 0.7);
+    width: fit-content;
+  }
+  
+  #infoStop {
+    color: red;
+    cursor: pointer;
+  }
+  
+  #infoRight, #infoCenter {
+    display: none;
+  }
+
+  @font-face {
+    font-family: "MinecraftFont";
+    src: url("static/Minecraft.ttf");
+  }
+</style>

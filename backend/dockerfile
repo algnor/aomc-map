@@ -1,0 +1,14 @@
+FROM astral/uv:alpine
+WORKDIR /backend
+
+ENV UV_LINK_MODE=copy
+
+COPY pyproject.toml .
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --no-install-project
+
+COPY . .
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync
+
+CMD ["uv", "run", "fastapi", "dev", "main.py", "--host", "0.0.0.0"]
