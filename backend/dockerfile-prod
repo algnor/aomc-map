@@ -13,4 +13,4 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 COPY --from=aomc-map-frontend-dist /frontend/dist /data/frontend
 
-CMD ["uv", "run", "fastapi", "dev", "main.py", "--host", "0.0.0.0"]
+CMD ["uv", "run", "fastapi", "run", "main.py", "--host", "0.0.0.0"]

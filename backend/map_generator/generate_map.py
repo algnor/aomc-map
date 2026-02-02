@@ -46,14 +46,16 @@ for k, file in enumerate(files):
     for k, piece in enumerate(crop(im, 512, 512)):
         img = Image.new("RGB", (512, 512))
         img.paste(piece)
+        path = ""
         if k == 0:
-            img.save(output.joinpath("0", f"{x}_{y}.png"))
+            path = output.joinpath("0", f"{x}_{y}.webp")
         if k == 1:
-            img.save(output.joinpath("0", f"{x + 512}_{y}.png"))
+            path = output.joinpath("0", f"{x + 512}_{y}.webp")
         if k == 2:
-            img.save(output.joinpath("0", f"{x}_{y + 512}.png"))
+            path = output.joinpath("0", f"{x}_{y + 512}.webp")
         if k == 3: 
-            img.save(output.joinpath("0", f"{x + 512}_{y + 512}.png"))
+            path = output.joinpath("0", f"{x + 512}_{y + 512}.webp")
+        img.save(path, lossless=True)
 
 #helper function to open image or get empty map for stitching
 def get_image(path: Path):
@@ -79,7 +81,7 @@ for zoom in range(1, 10):
         X = math.floor(x / dl) * dl
         Y = math.floor(y / dl) * dl
 
-        output_path = output.joinpath(str(zoom), f"{X}_{Y}.png")
+        output_path = output.joinpath(str(zoom), f"{X}_{Y}.webp")
         if output_path.is_file(): 
             print("Zoom:", zoom, f"{i}/{len(level)}", "Skipped (already covered)")
             continue # skip if this is already made
