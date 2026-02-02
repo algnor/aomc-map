@@ -38,28 +38,50 @@ for k, file in enumerate(files):
     assert dim == [1024, 1024], "input image dimensions not 1024x1024"
 
     parts = file.stem.split("_")
-    x = int(parts[2][1:])
-    y = int(parts[3][1:])
+    x = int(parts[2][1:])  # top-left x coordinate in world space
+    y = int(parts[3][1:])  # top-left y coordinate in world space
 
-    # crop to 4x 512x512 images
     Path.mkdir(output.joinpath("0"), exist_ok=True)
-    for k, piece in enumerate(crop(im, 512, 512)):
-        img = Image.new("RGB", (512, 512))
-        img.paste(piece)
-        path = ""
-        if k == 0:
-            path = output.joinpath("0", f"{x}_{y}.webp")
-        if k == 1:
-            path = output.joinpath("0", f"{x + 512}_{y}.webp")
-        if k == 2:
-            path = output.joinpath("0", f"{x}_{y + 512}.webp")
-        if k == 3: 
-            path = output.joinpath("0", f"{x + 512}_{y + 512}.webp")
-        img.save(path, lossless=True)
+
+    # Calculate the 512-aligned grid cells this image overlaps
+    tile_size = 512
+    
+    # Find the range of 512-aligned tiles this image covers
+    tile_x_start = math.floor(x / tile_size) * tile_size
+    tile_y_start = math.floor(y / tile_size) * tile_size
+    tile_x_end = math.floor((x + 1024 - 1) / tile_size) * tile_size
+    tile_y_end = math.floor((y + 1024 - 1) / tile_size) * tile_size
+
+    for tile_x in range(tile_x_start, tile_x_end + 1, tile_size):
+        for tile_y in range(tile_y_start, tile_y_end + 1, tile_size):
+            # Calculate overlap between this 512x512 tile and the source image
+            # In source image coordinates:
+            src_left = max(0, tile_x - x)
+            src_top = max(0, tile_y - y)
+            src_right = min(1024, tile_x + tile_size - x)
+            src_bottom = min(1024, tile_y + tile_size - y)
+
+            # In destination tile coordinates:
+            dst_left = max(0, x - tile_x)
+            dst_top = max(0, y - tile_y)
+
+            # Extract the region from source
+            region = im.crop((src_left, src_top, src_right, src_bottom))
+
+            # Load existing tile or create new one
+            path = output.joinpath("0", f"{tile_x}_{tile_y}.png")
+            if path.exists():
+                tile_img = Image.open(path).convert("RGB")
+            else:
+                tile_img = Image.new("RGB", (tile_size, tile_size))
+
+            # Paste the region
+            tile_img.paste(region, (dst_left, dst_top))
+            tile_img.save(path)
 
 #helper function to open image or get empty map for stitching
 def get_image(path: Path):
-    empty = Image.new("RGBA", [256, 256], (0, 0, 0, 0))
+    empty = Image.new("RGB", [256, 256], (0, 0, 0, 0))
     try:
         return Image.open(path).resize([256, 256])
     except:
@@ -81,7 +103,7 @@ for zoom in range(1, 10):
         X = math.floor(x / dl) * dl
         Y = math.floor(y / dl) * dl
 
-        output_path = output.joinpath(str(zoom), f"{X}_{Y}.webp")
+        output_path = output.joinpath(str(zoom), f"{X}_{Y}.png")
         if output_path.is_file(): 
             print("Zoom:", zoom, f"{i}/{len(level)}", "Skipped (already covered)")
             continue # skip if this is already made
@@ -97,7 +119,7 @@ for zoom in range(1, 10):
         im3 = get_image(im3_path)
         im4 = get_image(im4_path)
 
-        new_img = Image.new("RGBA", [512, 512])
+        new_img = Image.new("RGB", [512, 512])
         new_img.paste(im1, (0, 0))
         new_img.paste(im2, (256, 0))
         new_img.paste(im3, (0, 256))
