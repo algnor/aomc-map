@@ -43,25 +43,25 @@ class MinecraftTileLayer extends TileLayer {
         });
     }
 }
-// new MinecraftTileLayer('https://{s}.aomc-map.game.algot.net/map/{z}/{x}_{y}.png?s={s}', {
-//     maxNativeZoom: 9,
-//     minNativeZoom: 0,
-//     maxZoom: 15,
-//     minZoom: 0,
-//     tileSize: 512,
-//     attribution: '©AOMC Players',
-//     subdomains: "abcd",
-// }).addTo(map);
-
-
-new MinecraftTileLayer('/map/{z}/{x}_{y}.png?s={s}', {
+new MinecraftTileLayer('https://{s}.aomc-map.game.algot.net/map/{z}/{x}_{y}.png?s={s}', {
     maxNativeZoom: 9,
     minNativeZoom: 0,
     maxZoom: 15,
     minZoom: 0,
     tileSize: 512,
     attribution: '©AOMC Players',
+    subdomains: "abcd",
 }).addTo(map);
+
+
+// new MinecraftTileLayer('/map/{z}/{x}_{y}.png?s={s}', {
+//     maxNativeZoom: 9,
+//     minNativeZoom: 0,
+//     maxZoom: 15,
+//     minZoom: 0,
+//     tileSize: 512,
+//     attribution: '©AOMC Players',
+// }).addTo(map);
 
 new Control.Scale({imperial: false}).addTo(map)
 
