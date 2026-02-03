@@ -139,6 +139,8 @@ async def upload_map(file: UploadFile):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
 
+    print("Generating:", file.filename)
+
     modified_tiles = set()
     processed_files = []
     errors = []
