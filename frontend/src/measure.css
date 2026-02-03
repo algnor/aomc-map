@@ -1,37 +1,58 @@
+.infoBox {
+  top: 0px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 30rem;
+  margin-inline: auto;
+  color: white;
+  position: absolute;
+  z-index: 1000;
+  font-family: 'MinecraftFont';
+  pointer-events: none;
 
-  .infoBox {
-    top: 0px;
-    left: 0;
-    right: 0;
-    width: 100%;
-    max-width: 30rem;
-    margin-inline: auto;
-    color: white;
-    position: absolute;
-    z-index: 1000;
-    font-family: 'MinecraftFont';
-    pointer-events: none;
-    
-    display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
-  }
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+}
 
-  .info {
-    pointer-events: all;
-    margin: 0 auto;
-    font-size: larger;
-    text-align: center;
-    padding: 0.25rem;
-    background-color: rgba(0, 0, 0, 0.7);
-    width: fit-content;
-  }
-  
-  #infoStop {
-    color: red;
-    cursor: pointer;
-  }
-  
-  #infoRight, #infoCenter {
-    display: none;
-  }
+.info {
+  pointer-events: all;
+  margin: 0 auto;
+  font-size: larger;
+  text-align: center;
+  padding: 0.25rem;
+  background-color: rgba(0, 0, 0, 0.7);
+  width: fit-content;
+}
+
+#infoStop {
+  color: red;
+  cursor: pointer;
+}
+
+#infoRight,
+#infoCenter {
+  display: none;
+}
+
+.copyActive {
+  filter: brightness(0.75);
+}
+
+#clipboard {
+  height: min-content;
+  bottom: 0px;
+  left: 0;
+  right: 0;
+  width: fit-content;
+  max-width: 80%;
+  margin-inline: auto;
+  color: white;
+  position: absolute;
+  z-index: 1000;
+  font-family: 'MinecraftFont';
+  pointer-events: none;
+
+  display: none;
+}

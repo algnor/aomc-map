@@ -5,16 +5,20 @@ from pathlib import Path
 
 import gspread
 
+from map_generator import router as map_router
+
 app = FastAPI()
 
+app.include_router(map_router)
 
-mapPath = Path("./map_generator/output")
+mapPath = Path("/mnt/output")
 staticPath = Path("./static")
 frontend = Path("/data/frontend")
 
 app.mount("/map", StaticFiles(directory=mapPath))
 app.mount("/static", StaticFiles(directory=staticPath))
 overlay = {}
+
 
 @app.get("/api/overlay.json")
 def get_overlay():
@@ -32,7 +36,6 @@ def get_overlay_from_sheets():
     
     sheets = [s for s in spreadsheet.worksheets() if '!' not in s.title]
     
-    # Batch fetch all data
     ranges = [s.title for s in sheets]
     batch_data = spreadsheet.values_batch_get(ranges)['valueRanges']
     
@@ -40,7 +43,7 @@ def get_overlay_from_sheets():
     global overlay
     for sheet, data in zip(sheets, batch_data):
         values = data.get('values', [])
-        if len(values) < 2:  # need header + at least one row
+        if len(values) < 2:
             continue
 
         features = []
@@ -53,12 +56,12 @@ def get_overlay_from_sheets():
         
         rows = values[1:]
         for k, row in enumerate(rows):
-            name: str = row[0]
-            type: str = row[1]
-            popup: str = row[2]
-            coord_string: str = row[3]
-            coord = []
             try:
+                name: str = row[0]
+                type: str = row[1]
+                popup: str = row[2]
+                coord_string: str = row[3]
+                coord = []
                 print(row)
                 if type == "Pin":
                     coord = [int(c) for c in coord_string.split()]
@@ -96,9 +99,8 @@ def get_overlay_from_sheets():
     overlay = {"layers": layers}
     return
 
+
 try:
-    # this will fail in dev mode, but we dont care since it wont be used then
     app.mount("/", StaticFiles(directory=frontend, html=True))
 except:
     pass
-

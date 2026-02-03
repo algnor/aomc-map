@@ -1,16 +1,22 @@
-import { Map, Marker, Polyline, Icon, LatLng } from "leaflet"
+import { Map, Marker, Polyline, Icon, LatLng, Control, DomUtil, DomEvent } from "leaflet"
+
+
 /**
  * Initialize measure tool
  * @param {Map} map 
- */
+*/
 export function setupMeasureTool(map) {
+
+    let copyMode = false
+
+
     const coordText = document.getElementById("coordText")
     const scaleText = document.getElementById("scaleText")
-
+    
     const infoCenter = document.getElementById("infoCenter")
     const infoRight = document.getElementById("infoRight")
     const infoStop = document.getElementById("infoStop")
-
+    
     const markerIcon = new Icon({
         iconUrl: "static/Marker.png",
         iconSize: [24, 24],
@@ -56,11 +62,36 @@ export function setupMeasureTool(map) {
     function onZoomChange() {
         scaleText.innerHTML = `Scale: ${Math.round(2 ** ((map.getZoom() - 9) * -1) * 1000) / 1000}`
     }
+
+    const copyIcon = new Icon({
+        iconUrl: "static/markers/light_gray_banner.png",
+        iconSize: [24, 24],
+        iconAnchor: [12, 24]
+    })
+
+    let lastClipboard = ""
     /**
     * @param {import("leaflet").LeafletMouseEvent} e 
     */
-    function onClick(e) {
-        // Reset visuals
+    async function onClick(e) {
+        // if copy mode active
+        if (copyMode) {
+            let pointMarker = new Marker(e.latlng, { icon: copyIcon})
+            pointMarker.bindTooltip(`x: ${Math.round(e.latlng.lng)}  z: ${Math.round(e.latlng.lat)}`)
+            pointMarker.addTo(e.target)
+
+            let clipboard = document.getElementById("clipboard")
+
+            if (lastClipboard) lastClipboard += ", "
+
+            let text = lastClipboard +  `${Math.round(e.latlng.lng)} ${Math.round(e.latlng.lat)}`
+            lastClipboard = text
+            navigator.clipboard.writeText(text)
+            clipboard.innerHTML = text
+
+            return
+
+        }
 
 
         // update coordinates
@@ -102,18 +133,24 @@ export function setupMeasureTool(map) {
     function stopInfo() {
         userCoordStart = null
         userCoordEnd = null
+
         infoCenter.style = 'display: none'
         infoRight.style = 'display: none'
-
+        
         userCoordStartMarker.remove()
         userCoordEndMarker.remove()
         userCoordPolyLine.remove()
+
+        let clipboard = document.getElementById("clipboard")
+        lastClipboard = ""
+        clipboard.innerHTML = "&lt;empty&gt;"
     }
 
     infoStop.addEventListener('click', stopInfo)
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             stopInfo()
+            lastClipboard = ""
         }
     })
 
@@ -122,4 +159,44 @@ export function setupMeasureTool(map) {
     map.on('zoom', onZoomChange);
     map.on('click', onClick)
     onZoomChange()
+
+
+
+    function copyCoordinateMode() {
+        copyMode = !copyMode
+    
+        let button = document.getElementById("copyButton")
+        let clipboard = document.getElementById("clipboard")
+        if (copyMode) {
+            stopInfo()
+            button.classList.add("copyActive")
+            clipboard.style.display = "block"
+            clipboard.innerHTML = "&lt;empty&gt;"
+        } else {
+            button.classList.remove("copyActive")
+            clipboard.style.display = "none"
+        }
+    }
+    
+    const CopyCoordinateButton = Control.extend({
+        options: {
+            position: 'topleft'
+        },
+        onAdd: function (map) {
+            var container = DomUtil.create('div', 'leaflet-bar leaflet-control');
+            var button = DomUtil.create('a', 'leaflet-control-button', container);
+            DomEvent.disableClickPropagation(button);
+            DomEvent.on(button, 'click', copyCoordinateMode, map);
+    
+            container.title = "Enable/Disable Copy Mode ";
+            button.innerHTML = "<img src='static/copy-icon.svg'>"
+            container.style = "cursor: pointer;"
+            container.id = "copyButton"
+    
+            return container;
+        },
+        onRemove: function (map) { },
+    });
+    const copyCoordinateButton = new CopyCoordinateButton()
+    copyCoordinateButton.addTo(map)
 }

@@ -46,6 +46,10 @@ export async function setupOverlay(map) {
             iconAnchor: [12, 24],
         })
         layer["features"].forEach(feature => {
+            let color = layerColor
+            if (feature["name"].indexOf("#") > -1) {
+                color = colors[feature["name"].split("#")[1]]
+            }
             let newFeature = null
             if (feature["type"] === "Pin") {
                 newFeature = new Marker(
@@ -57,14 +61,14 @@ export async function setupOverlay(map) {
             if (feature["type"] === "Line") {
                 newFeature = new Polyline(
                     feature["coordinate"],
-                    { color: layerColor[0] }
+                    { color: color[0] }
                 )
             }
 
             if (feature["type"] === "Polygon") {
                 newFeature = new Polygon(
                     feature["coordinate"],
-                    { color: layerColor[0] }
+                    { color: color[0] }
                 )
             }
 
