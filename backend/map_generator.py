@@ -20,11 +20,10 @@ PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def get_image(path: Path):
-    empty = Image.new("RGB", (256, 256), (0, 0, 0))
     try:
         return Image.open(path).convert("RGB").resize((256, 256))
     except:
-        return empty
+        return None
 
 
 def process_image(file_path: Path, modified_tiles: set):
@@ -100,23 +99,27 @@ def regenerate_zoom_levels(modified_tiles: set):
         for X, Y in parent_tiles:
             ds = int(dl / 2)
 
-            im1_path = OUTPUT_DIR.joinpath(str(zoom - 1), f"{X}_{Y}.png")
-            im2_path = OUTPUT_DIR.joinpath(str(zoom - 1), f"{X + ds}_{Y}.png")
-            im3_path = OUTPUT_DIR.joinpath(str(zoom - 1), f"{X}_{Y + ds}.png")
-            im4_path = OUTPUT_DIR.joinpath(str(zoom - 1), f"{X + ds}_{Y + ds}.png")
-
-            im1 = get_image(im1_path)
-            im2 = get_image(im2_path)
-            im3 = get_image(im3_path)
-            im4 = get_image(im4_path)
-
-            new_img = Image.new("RGB", (512, 512))
-            new_img.paste(im1, (0, 0))
-            new_img.paste(im2, (256, 0))
-            new_img.paste(im3, (0, 256))
-            new_img.paste(im4, (256, 256))
+            positions = [
+                (OUTPUT_DIR.joinpath(str(zoom - 1), f"{X}_{Y}.png"), (0, 0)),
+                (OUTPUT_DIR.joinpath(str(zoom - 1), f"{X + ds}_{Y}.png"), (256, 0)),
+                (OUTPUT_DIR.joinpath(str(zoom - 1), f"{X}_{Y + ds}.png"), (0, 256)),
+                (OUTPUT_DIR.joinpath(str(zoom - 1), f"{X + ds}_{Y + ds}.png"), (256, 256)),
+            ]
 
             output_path = OUTPUT_DIR.joinpath(str(zoom), f"{X}_{Y}.png")
+            
+            # Load existing parent tile or create new
+            if output_path.exists():
+                new_img = Image.open(output_path).convert("RGB")
+            else:
+                new_img = Image.new("RGB", (512, 512))
+
+            # Only paste tiles that exist
+            for path, pos in positions:
+                img = get_image(path)
+                if img:
+                    new_img.paste(img, pos)
+
             new_img.save(output_path)
 
         total_updated += len(parent_tiles)
