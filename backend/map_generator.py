@@ -7,6 +7,7 @@ import zipfile
 import io
 import tempfile
 import shutil
+import numpy as np
 
 router = APIRouter(prefix="/api/map", tags=["map"])
 
@@ -61,13 +62,19 @@ def process_image(file_path: Path, modified_tiles: set):
 
             region = im.crop((src_left, src_top, src_right, src_bottom))
 
+            # Create mask: non-black pixels are opaque (255), black pixels are transparent (0)
+            region_array = np.array(region)
+            mask_array = np.any(region_array != 0, axis=2).astype(np.uint8) * 255
+            mask = Image.fromarray(mask_array, mode="L")
+
             path = OUTPUT_DIR.joinpath("0", f"{tile_x}_{tile_y}.png")
             if path.exists():
                 tile_img = Image.open(path).convert("RGB")
             else:
                 tile_img = Image.new("RGB", (tile_size, tile_size))
 
-            tile_img.paste(region, (dst_left, dst_top))
+            # Paste with mask - only non-black pixels get written
+            tile_img.paste(region, (dst_left, dst_top), mask)
             tile_img.save(path)
 
             modified_tiles.add((tile_x, tile_y))
