@@ -86,7 +86,10 @@ export async function setupOverlay(map) {
             features.push(newFeature)
 
         });
-        const layerGroup = new LayerGroup(features).addTo(map)
+        let layerGroup = new LayerGroup(features)
+        if (layer["name"][0] != ".") {
+            layerGroup.addTo(map)
+        }
         layerControl.addOverlay(layerGroup, layer["name"])
     });
 }
