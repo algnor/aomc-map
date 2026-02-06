@@ -38,6 +38,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard"] },
+    { name = "fastapi-analytics" },
     { name = "gspread" },
     { name = "numpy" },
     { name = "pillow" },
@@ -46,6 +47,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", extras = ["standard"] },
+    { name = "fastapi-analytics", specifier = ">=1.2.5" },
     { name = "gspread" },
     { name = "numpy" },
     { name = "pillow" },
@@ -267,6 +269,19 @@ standard = [
     { name = "pydantic-settings" },
     { name = "python-multipart" },
     { name = "uvicorn", extra = ["standard"] },
+]
+
+[[package]]
+name = "fastapi-analytics"
+version = "1.2.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "fastapi" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/45/39/32a1ef824717578b358392656c6a4f82e77a3ade93332cfa9807e2eb324b/fastapi_analytics-1.2.5.tar.gz", hash = "sha256:8dca8e5079602da85971120ceb357918606a1be7706e7031f87e550e26fbab81", size = 9334, upload-time = "2025-05-17T12:01:39.68Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/05/e9/3f9b063d1f047f90c9231f0c8615e53cf44df5d40ad15bea2234512654a0/fastapi_analytics-1.2.5-py3-none-any.whl", hash = "sha256:e84bdf0bb603d6897dd7826f50ebf9b8d4d2424f19ee4dd465d743cd7208d52a", size = 8596, upload-time = "2025-05-17T12:01:38.276Z" },
 ]
 
 [[package]]

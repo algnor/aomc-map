@@ -5,11 +5,18 @@ from pathlib import Path
 
 import gspread
 
+import env as env
+
 from map_generator import router as map_router
 
 app = FastAPI()
 
 app.include_router(map_router)
+
+if env.ANALYTICS:
+    from api_analytics.fastapi import Analytics
+    app.add_middleware(Analytics, api_key=env.ANALYTICS_KEY)  # Add middleware
+    print("added analytics")
 
 mapPath = Path("/mnt/output")
 staticPath = Path("./static")
