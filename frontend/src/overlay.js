@@ -1,4 +1,4 @@
-import { Map, Control, DomEvent, DomUtil, Marker, LatLng, LayerGroup, Icon, Polyline, Polygon } from "leaflet";
+import { Map, Control, DomEvent, DomUtil, Marker, LayerGroup, Icon, Polyline, Polygon } from "leaflet";
 
 const colors = {
     black: ["#1d1d21", "black_banner.png"],

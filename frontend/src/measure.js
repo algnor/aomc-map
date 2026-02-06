@@ -9,14 +9,13 @@ export function setupMeasureTool(map) {
 
     let copyMode = false
 
-
     const coordText = document.getElementById("coordText")
     const scaleText = document.getElementById("scaleText")
-    
+
     const infoCenter = document.getElementById("infoCenter")
     const infoRight = document.getElementById("infoRight")
     const infoStop = document.getElementById("infoStop")
-    
+
     const markerIcon = new Icon({
         iconUrl: "static/Marker.png",
         iconSize: [24, 24],
@@ -76,7 +75,7 @@ export function setupMeasureTool(map) {
     async function onClick(e) {
         // if copy mode active
         if (copyMode) {
-            let pointMarker = new Marker(e.latlng, { icon: copyIcon})
+            let pointMarker = new Marker(e.latlng, { icon: copyIcon })
             pointMarker.bindTooltip(`x: ${Math.round(e.latlng.lng)}  z: ${Math.round(e.latlng.lat)}`)
             pointMarker.addTo(e.target)
 
@@ -84,7 +83,7 @@ export function setupMeasureTool(map) {
 
             if (lastClipboard) lastClipboard += ", "
 
-            let text = lastClipboard +  `${Math.round(e.latlng.lng)} ${Math.round(e.latlng.lat)}`
+            let text = lastClipboard + `${Math.round(e.latlng.lng)} ${Math.round(e.latlng.lat)}`
             lastClipboard = text
             navigator.clipboard.writeText(text)
             clipboard.innerHTML = text
@@ -136,7 +135,7 @@ export function setupMeasureTool(map) {
 
         infoCenter.style = 'display: none'
         infoRight.style = 'display: none'
-        
+
         userCoordStartMarker.remove()
         userCoordEndMarker.remove()
         userCoordPolyLine.remove()
@@ -164,7 +163,7 @@ export function setupMeasureTool(map) {
 
     function copyCoordinateMode() {
         copyMode = !copyMode
-    
+
         let button = document.getElementById("copyButton")
         let clipboard = document.getElementById("clipboard")
         if (copyMode) {
@@ -177,7 +176,7 @@ export function setupMeasureTool(map) {
             clipboard.style.display = "none"
         }
     }
-    
+
     const CopyCoordinateButton = Control.extend({
         options: {
             position: 'topleft'
@@ -187,12 +186,12 @@ export function setupMeasureTool(map) {
             var button = DomUtil.create('a', 'leaflet-control-button', container);
             DomEvent.disableClickPropagation(button);
             DomEvent.on(button, 'click', copyCoordinateMode, map);
-    
+
             container.title = "Enable/Disable Copy Mode ";
             button.innerHTML = "<img src='static/copy-icon.svg'>"
             container.style = "cursor: pointer;"
             container.id = "copyButton"
-    
+
             return container;
         },
         onRemove: function (map) { },
