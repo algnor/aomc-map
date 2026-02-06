@@ -1,5 +1,5 @@
 import './style.css'
-import {CRS, Map, TileLayer, Util, Control, Transformation, Marker, Polyline, Icon} from "leaflet"
+import {CRS, Map, TileLayer, Util, Control, Transformation, Canvas} from "leaflet"
 import 'leaflet/dist/leaflet.css'
 
 
@@ -22,7 +22,13 @@ Object.assign(MinecraftCRS, {
     )
 });
 
+const canvasRenderer = new Canvas({
+  tolerance: 5,
+
+});
+
 const map = new Map('map', {
+    renderer: canvasRenderer,
     crs: MinecraftCRS,
     center: [0, 0],
     zoom: 7

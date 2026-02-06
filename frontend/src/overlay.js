@@ -63,6 +63,20 @@ export async function setupOverlay(map) {
                     feature["coordinate"],
                     { color: color[0] }
                 )
+                newFeature.on('pointerover', function (e) {
+                    var layer = e.target;
+
+                    layer.setStyle({
+                        weight: 8,
+                    });
+                });
+                newFeature.on('pointerout', function (e) {
+                    var layer = e.target;
+
+                    layer.setStyle({
+                        weight: 3,
+                    });
+                });
             }
 
             if (feature["type"] === "Polygon") {
@@ -70,6 +84,20 @@ export async function setupOverlay(map) {
                     feature["coordinate"],
                     { color: color[0] }
                 )
+                newFeature.on('pointerover', function (e) {
+                    var layer = e.target;
+
+                    layer.setStyle({
+                        weight: 5,
+                    });
+                });
+                newFeature.on('pointerout', function (e) {
+                    var layer = e.target;
+
+                    layer.setStyle({
+                        weight: 3,
+                    });
+                });
             }
 
             if (!newFeature) {
