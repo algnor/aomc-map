@@ -1,4 +1,7 @@
 import { Map, Control, DomEvent, DomUtil, Marker, LayerGroup, Icon, Polyline, Polygon } from "leaflet";
+import "@kristjan.esperanto/leaflet.markercluster/dist/MarkerCluster.css";
+import "@kristjan.esperanto/leaflet.markercluster/dist/MarkerCluster.Default.css";
+import { MarkerClusterGroup } from "@kristjan.esperanto/leaflet.markercluster";
 
 const colors = {
     black: ["#1d1d21", "black_banner.png"],
@@ -36,6 +39,8 @@ export async function setupOverlay(map) {
 
 
     layers.forEach(layer => {
+
+        let markers = new MarkerClusterGroup({maxClusterRadius: 50, clusterMarkerTitle: layer["name"], showCoverageOnHover: false});
         let features = []
 
         let layerColor = colors[layer["color"] || "white"]
@@ -111,10 +116,20 @@ export async function setupOverlay(map) {
             if (feature["popup"])
                 newFeature.bindPopup(feature["popup"], { maxWidth: 1000 })
 
-            features.push(newFeature)
+            if (feature["type"] === "Pin") {
+                markers.addLayer(newFeature)
+            } else {
+                features.push(newFeature)
+            }
 
         });
         let layerGroup = new LayerGroup(features)
+        layerGroup.on("add", function (e) {
+            markers.addTo(map)
+        })
+        layerGroup.on("remove", function (e) {
+            markers.remove()
+        })
         if (layer["name"][0] != ".") {
             layerGroup.addTo(map)
         }
