@@ -31,7 +31,7 @@ export async function setupLayers(map) {
     
     let first = true
     layers.forEach((layer) => {
-        const tileLayer = new MinecraftTileLayer('https://{s}.aomc-map.game.algot.net/map/{z}/{x}_{y}.png?s={s}', {
+        const tileLayer = new MinecraftTileLayer(`https://{s}.aomc-map.game.algot.net/map/${layer["name"]}/{z}/{x}_{y}.png?s={s}`, {
             maxNativeZoom: 9,
             minNativeZoom: 0,
             maxZoom: 15,
