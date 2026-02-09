@@ -7,7 +7,7 @@ import { Map } from "leaflet";
 export function setupUrlCoordinates(map) {
     const params = new URLSearchParams(window.location.search)
     
-    if (params.has("x") && params.has("z")) {
+    if (params.has("x") && params.has("z") && params.has("zoom")) {
         const x = parseFloat(params.get("x"))
         const z = parseFloat(params.get("z"))
         const zoom = params.get("zoom") ?? map.getZoom()

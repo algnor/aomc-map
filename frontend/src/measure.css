@@ -8,7 +8,6 @@
   color: white;
   position: absolute;
   z-index: 1000;
-  font-family: 'MinecraftFont';
   pointer-events: none;
 
   display: flex;
@@ -24,6 +23,9 @@
   padding: 0.25rem;
   background-color: rgba(0, 0, 0, 0.7);
   width: fit-content;
+
+  font-family: 'MinecraftFont';
+  color: white;
 }
 
 #infoStop {
@@ -45,13 +47,10 @@
   bottom: 0px;
   left: 0;
   right: 0;
-  width: fit-content;
   max-width: 80%;
   margin-inline: auto;
-  color: white;
   position: absolute;
   z-index: 1000;
-  font-family: 'MinecraftFont';
   pointer-events: none;
 
   display: none;

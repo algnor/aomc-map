@@ -1,4 +1,4 @@
-import { Map, Control, DomEvent, DomUtil, Marker, LayerGroup, Icon, Polyline, Polygon } from "leaflet";
+import { Map, Control, DomEvent, DomUtil, Marker, LayerGroup, Icon, Polyline, Polygon, Layer, TileLayer } from "leaflet";
 import "@kristjan.esperanto/leaflet.markercluster/dist/MarkerCluster.css";
 import "@kristjan.esperanto/leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { MarkerClusterGroup } from "@kristjan.esperanto/leaflet.markercluster";
@@ -24,117 +24,156 @@ const colors = {
 
 /**
  * @param {Map} map 
- */
-export async function setupOverlay(map) {
-    // Add refresh button
-    var refreshButton = new RefreshButton()
-    refreshButton.addTo(map)
+ * @param {Control.Layers} layerControl 
+*/
 
+export async function setupOverlay(map, layerControl) {
     // Get overlay data
     const res = await fetch("api/overlay.json")
     const data = await res.json()
     const layers = data["layers"]
-    const layerControl = new Control.Layers().addTo(map)
+    // Add refresh button
+    var refreshButton = new RefreshButton()
+    refreshButton.addTo(map)
+
+    let activeOverlays = []
 
 
+    map.on("baselayerchange", (e) => {
+        addLayers(map, e["name"])
+    })
+    addLayers(map, "overworld")
 
-    layers.forEach(layer => {
+    function clearOverlays() {
+        activeOverlays.forEach((layerGroup) => {
+            layerControl.removeLayer(layerGroup)
 
-        let markers = new MarkerClusterGroup({maxClusterRadius: 50, clusterMarkerTitle: layer["name"], showCoverageOnHover: false});
-        let features = []
-
-        let layerColor = colors[layer["color"] || "white"]
-        let iconUrl = `/static/markers/${layerColor[1]}`
-        const icon = new Icon({
-            iconUrl: iconUrl,
-            iconSize: [24, 24],
-            iconAnchor: [12, 24],
+            setTimeout(() => {
+                layerGroup.removeFrom(map)
+            }, 0);
         })
-        layer["features"].forEach(feature => {
-            let color = layerColor
-            if (feature["name"].indexOf("#") > -1) {
-                color = colors[feature["name"].split("#")[1]]
-            }
-            let newFeature = null
-            if (feature["type"] === "Pin") {
-                newFeature = new Marker(
-                    feature["coordinate"],
-                    { icon: icon }
-                )
+        activeOverlays = []
+    }
+
+    //addLayers(map, "overworld")
+    /**
+     * 
+     * @param {Map} map 
+     * @param {String} target_dim 
+     */
+    function addLayers(map, target_dim) {
+        clearOverlays()
+
+        console.log("adding overlays for:", target_dim)
+        layers.forEach(layer => {
+
+            let markers = new MarkerClusterGroup({ maxClusterRadius: 50, clusterMarkerTitle: layer["name"], showCoverageOnHover: false });
+            let features = []
+
+            let dim = "overworld"
+            if (layer["name"][0] === "@") {
+                dim = layer["name"].split(" ")[0].substring(1)
             }
 
-            if (feature["type"] === "Line") {
-                newFeature = new Polyline(
-                    feature["coordinate"],
-                    { color: color[0] }
-                )
-                newFeature.on('pointerover', function (e) {
-                    var layer = e.target;
+            if (target_dim !== dim) return
 
-                    layer.setStyle({
-                        weight: 8,
+            console.log(dim)
+
+            let layerColor = colors[layer["color"] || "white"]
+            let iconUrl = `/static/markers/${layerColor[1]}`
+            const icon = new Icon({
+                iconUrl: iconUrl,
+                iconSize: [24, 24],
+                iconAnchor: [12, 24],
+            })
+            layer["features"].forEach(feature => {
+                let color = layerColor
+                if (feature["name"].indexOf("#") > -1) {
+                    color = colors[feature["name"].split("#")[1]]
+                }
+                let newFeature = null
+                if (feature["type"] === "Pin") {
+                    newFeature = new Marker(
+                        feature["coordinate"],
+                        { icon: icon }
+                    )
+                }
+
+                if (feature["type"] === "Line") {
+                    newFeature = new Polyline(
+                        feature["coordinate"],
+                        { color: color[0] }
+                    )
+                    newFeature.on('pointerover', function (e) {
+                        var layer = e.target;
+
+                        layer.setStyle({
+                            weight: 8,
+                        });
                     });
-                });
-                newFeature.on('pointerout', function (e) {
-                    var layer = e.target;
+                    newFeature.on('pointerout', function (e) {
+                        var layer = e.target;
 
-                    layer.setStyle({
-                        weight: 3,
+                        layer.setStyle({
+                            weight: 3,
+                        });
                     });
-                });
-            }
+                }
 
-            if (feature["type"] === "Polygon") {
-                newFeature = new Polygon(
-                    feature["coordinate"],
-                    { color: color[0] }
-                )
-                newFeature.on('pointerover', function (e) {
-                    var layer = e.target;
+                if (feature["type"] === "Polygon") {
+                    newFeature = new Polygon(
+                        feature["coordinate"],
+                        { color: color[0] }
+                    )
+                    newFeature.on('pointerover', function (e) {
+                        var layer = e.target;
 
-                    layer.setStyle({
-                        weight: 5,
+                        layer.setStyle({
+                            weight: 5,
+                        });
                     });
-                });
-                newFeature.on('pointerout', function (e) {
-                    var layer = e.target;
+                    newFeature.on('pointerout', function (e) {
+                        var layer = e.target;
 
-                    layer.setStyle({
-                        weight: 3,
+                        layer.setStyle({
+                            weight: 3,
+                        });
                     });
-                });
+                }
+
+                if (!newFeature) {
+                    console.error("feature could not be parsed, skipping", feature)
+                    return
+                }
+
+                // global to all features
+                if (feature["name"])
+                    newFeature.bindTooltip(feature["name"])
+                if (feature["popup"])
+                    newFeature.bindPopup(feature["popup"], { maxWidth: 1000 })
+
+                if (feature["type"] === "Pin") {
+                    markers.addLayer(newFeature)
+                } else {
+                    features.push(newFeature)
+                }
+
+            });
+            var layerGroup = new LayerGroup(features)
+            layerGroup.on("add", function (e) {
+                markers.addTo(map)
+            })
+            layerGroup.on("remove", function (e) {
+                markers.remove()
+            })
+            if (layer["name"][0] != ".") {
+                layerGroup.addTo(map)
             }
+            layerControl.addOverlay(layerGroup, layer["name"])
 
-            if (!newFeature) {
-                console.error("feature could not be parsed, skipping", feature)
-                return
-            }
-
-            // global to all features
-            if (feature["name"])
-                newFeature.bindTooltip(feature["name"])
-            if (feature["popup"])
-                newFeature.bindPopup(feature["popup"], { maxWidth: 1000 })
-
-            if (feature["type"] === "Pin") {
-                markers.addLayer(newFeature)
-            } else {
-                features.push(newFeature)
-            }
-
+            activeOverlays.push(layerGroup)
         });
-        let layerGroup = new LayerGroup(features)
-        layerGroup.on("add", function (e) {
-            markers.addTo(map)
-        })
-        layerGroup.on("remove", function (e) {
-            markers.remove()
-        })
-        if (layer["name"][0] != ".") {
-            layerGroup.addTo(map)
-        }
-        layerControl.addOverlay(layerGroup, layer["name"])
-    });
+    }
 }
 
 /**

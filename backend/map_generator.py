@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pathlib import Path
 import math
 from PIL import Image
@@ -8,16 +8,19 @@ import io
 import tempfile
 import shutil
 import numpy as np
+import json
+import asyncio
+
+DIMENSIONS = json.loads(open("./static/dimensions.json").read())
+DIMENSION_NAMES = {d["name"] for d in DIMENSIONS}
 
 router = APIRouter(prefix="/api/map", tags=["map"])
 
-INPUT_DIR = Path("/mnt/input")
+TEMP_DIR = Path("/mnt/temp")
 OUTPUT_DIR = Path("/mnt/output")
-PROCESSED_DIR = Path("/mnt/processed")
 
-INPUT_DIR.mkdir(parents=True, exist_ok=True)
+TEMP_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def get_image(path: Path):
@@ -27,7 +30,7 @@ def get_image(path: Path):
         return None
 
 
-def process_image(file_path: Path, modified_tiles: set):
+def process_image(file_path: Path, output_dir: Path, modified_tiles: set):
     im = Image.open(file_path).convert("RGB")
     img_width, img_height = im.size
 
@@ -41,7 +44,7 @@ def process_image(file_path: Path, modified_tiles: set):
     except (IndexError, ValueError):
         return False, f"Invalid filename format: {file_path.name}"
 
-    OUTPUT_DIR.joinpath("0").mkdir(exist_ok=True)
+    output_dir.joinpath("0").mkdir(exist_ok=True)
 
     tile_size = 512
 
@@ -62,18 +65,16 @@ def process_image(file_path: Path, modified_tiles: set):
 
             region = im.crop((src_left, src_top, src_right, src_bottom))
 
-            # Create mask: non-black pixels are opaque (255), black pixels are transparent (0)
             region_array = np.array(region)
             mask_array = np.any(region_array != 0, axis=2).astype(np.uint8) * 255
             mask = Image.fromarray(mask_array, mode="L")
 
-            path = OUTPUT_DIR.joinpath("0", f"{tile_x}_{tile_y}.png")
+            path = output_dir.joinpath("0", f"{tile_x}_{tile_y}.png")
             if path.exists():
                 tile_img = Image.open(path).convert("RGB")
             else:
                 tile_img = Image.new("RGB", (tile_size, tile_size))
 
-            # Paste with mask - only non-black pixels get written
             tile_img.paste(region, (dst_left, dst_top), mask)
             tile_img.save(path)
 
@@ -82,9 +83,10 @@ def process_image(file_path: Path, modified_tiles: set):
     return True, None
 
 
-def regenerate_zoom_levels(modified_tiles: set):
+def regenerate_zoom_levels(output_dir: Path, modified_tiles: set):
     if not modified_tiles:
-        return 0
+        yield "No tiles to update", 0
+        return
 
     tiles_to_update = modified_tiles.copy()
     total_updated = 0
@@ -93,7 +95,7 @@ def regenerate_zoom_levels(modified_tiles: set):
         if not tiles_to_update:
             break
 
-        OUTPUT_DIR.joinpath(str(zoom)).mkdir(exist_ok=True)
+        output_dir.joinpath(str(zoom)).mkdir(exist_ok=True)
 
         parent_tiles = set()
         dl = 512 * (2 ** zoom)
@@ -103,25 +105,23 @@ def regenerate_zoom_levels(modified_tiles: set):
             parent_y = math.floor(ty / dl) * dl
             parent_tiles.add((parent_x, parent_y))
 
-        for X, Y in parent_tiles:
+        for i, (X, Y) in enumerate(parent_tiles):
             ds = int(dl / 2)
 
             positions = [
-                (OUTPUT_DIR.joinpath(str(zoom - 1), f"{X}_{Y}.png"), (0, 0)),
-                (OUTPUT_DIR.joinpath(str(zoom - 1), f"{X + ds}_{Y}.png"), (256, 0)),
-                (OUTPUT_DIR.joinpath(str(zoom - 1), f"{X}_{Y + ds}.png"), (0, 256)),
-                (OUTPUT_DIR.joinpath(str(zoom - 1), f"{X + ds}_{Y + ds}.png"), (256, 256)),
+                (output_dir.joinpath(str(zoom - 1), f"{X}_{Y}.png"), (0, 0)),
+                (output_dir.joinpath(str(zoom - 1), f"{X + ds}_{Y}.png"), (256, 0)),
+                (output_dir.joinpath(str(zoom - 1), f"{X}_{Y + ds}.png"), (0, 256)),
+                (output_dir.joinpath(str(zoom - 1), f"{X + ds}_{Y + ds}.png"), (256, 256)),
             ]
 
-            output_path = OUTPUT_DIR.joinpath(str(zoom), f"{X}_{Y}.png")
-            
-            # Load existing parent tile or create new
+            output_path = output_dir.joinpath(str(zoom), f"{X}_{Y}.png")
+
             if output_path.exists():
                 new_img = Image.open(output_path).convert("RGB")
             else:
                 new_img = Image.new("RGB", (512, 512))
 
-            # Only paste tiles that exist
             for path, pos in positions:
                 img = get_image(path)
                 if img:
@@ -129,63 +129,105 @@ def regenerate_zoom_levels(modified_tiles: set):
 
             new_img.save(output_path)
 
+            if (i + 1) % 20 == 0 or (i + 1) == len(parent_tiles):
+                yield f"Zoom {zoom}: {i + 1}/{len(parent_tiles)} tiles", None
+
         total_updated += len(parent_tiles)
         tiles_to_update = parent_tiles
 
-    return total_updated
+    yield f"Complete: {total_updated} zoom tiles updated", total_updated
 
-@router.post("/upload")
-async def upload_map(file: UploadFile):
+
+@router.post("/upload/{dim}")
+async def upload_map(dim: str, file: UploadFile):
+    if dim not in DIMENSION_NAMES:
+        raise HTTPException(status_code=400, detail=f"Invalid dimension: {dim}")
+
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
 
-    print("Generating:", file.filename)
-
-    modified_tiles = set()
-    processed_files = []
-    errors = []
+    dim_temp_dir = TEMP_DIR / dim
+    dim_temp_dir.mkdir(parents=True, exist_ok=True)
 
     content = await file.read()
+    saved_files = []
 
     if file.filename.lower().endswith(".zip"):
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp_path = Path(tmp_dir)
-
-            with zipfile.ZipFile(io.BytesIO(content), "r") as zf:
-                zf.extractall(tmp_path)
-
-            # Debug: print what was extracted
-            all_files = list(tmp_path.rglob("*"))
-            print("Extracted files:", all_files)
-
-            for img_path in tmp_path.rglob("*"):
-                if img_path.is_file() and img_path.suffix.lower() == ".png":
-                    success, error = process_image(img_path, modified_tiles)
-                    if success:
-                        dest = PROCESSED_DIR.joinpath(img_path.name)
-                        shutil.copy2(img_path, dest)
-                        processed_files.append(img_path.name)
-                    else:
-                        errors.append({"file": img_path.name, "error": error})
+        with zipfile.ZipFile(io.BytesIO(content), "r") as zf:
+            for name in zf.namelist():
+                if name.lower().endswith(".png"):
+                    data = zf.read(name)
+                    dest = dim_temp_dir / Path(name).name
+                    dest.write_bytes(data)
+                    saved_files.append(dest.name)
     else:
-        # Preserve original filename
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp_path = Path(tmp_dir) / file.filename
-            tmp_path.write_bytes(content)
-
-            success, error = process_image(tmp_path, modified_tiles)
-            if success:
-                dest = PROCESSED_DIR.joinpath(file.filename)
-                shutil.copy2(tmp_path, dest)
-                processed_files.append(file.filename)
-            else:
-                errors.append({"file": file.filename, "error": error})
-
-    zoom_tiles_updated = regenerate_zoom_levels(modified_tiles)
+        dest = dim_temp_dir / file.filename
+        dest.write_bytes(content)
+        saved_files.append(file.filename)
 
     return JSONResponse({
-        "processed_files": len(processed_files),
-        "base_tiles_modified": len(modified_tiles),
-        "zoom_tiles_updated": zoom_tiles_updated,
-        "errors": errors
+        "dimension": dim,
+        "files_saved": len(saved_files),
+        "files": saved_files
     })
+
+
+@router.get("/unprocessed")
+async def get_unprocessed():
+    result = {}
+    for dim in DIMENSION_NAMES:
+        dim_path = TEMP_DIR / dim
+        if dim_path.exists():
+            files = [f.name for f in dim_path.iterdir() if f.is_file() and f.suffix.lower() == ".png"]
+            if files:
+                result[dim] = files
+    return JSONResponse(result)
+
+
+@router.post("/process")
+async def process_all():
+    async def stream_log():
+        for dim in DIMENSION_NAMES:
+            dim_temp = TEMP_DIR / dim
+            dim_output = OUTPUT_DIR / dim
+
+            if not dim_temp.exists():
+                continue
+
+            files = list(dim_temp.glob("*.png"))
+            if not files:
+                continue
+
+            dim_output.mkdir(parents=True, exist_ok=True)
+            yield f"[{dim}] Starting processing of {len(files)} files\n"
+
+            modified_tiles = set()
+            processed = 0
+            errors = 0
+
+            for img_path in files:
+                success, error = process_image(img_path, dim_output, modified_tiles)
+                if success:
+                    processed += 1
+                    img_path.unlink()
+                else:
+                    errors += 1
+                    yield f"[{dim}] Error processing {img_path.name}: {error}\n"
+
+                if processed % 10 == 0:
+                    yield f"[{dim}] Processed {processed}/{len(files)} files\n"
+                    await asyncio.sleep(0)
+
+            yield f"[{dim}] Base tiles complete: {processed} processed, {errors} errors, {len(modified_tiles)} tiles modified\n"
+
+            if modified_tiles:
+                yield f"[{dim}] Regenerating zoom levels...\n"
+                for msg, result in regenerate_zoom_levels(dim_output, modified_tiles):
+                    yield f"[{dim}] {msg}\n"
+                    await asyncio.sleep(0)
+
+            yield f"[{dim}] Done\n"
+
+        yield "Processing complete\n"
+
+    return StreamingResponse(stream_log(), media_type="text/plain")

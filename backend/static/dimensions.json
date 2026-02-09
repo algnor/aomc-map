@@ -1,0 +1,16 @@
+[
+    {
+        "name": "overworld"
+    },
+    {
+        "name": "overworld_caves"
+    },
+    {
+        "name": "nether",
+        "scale": 8
+    },
+    {
+        "name": "the_end",
+        "reset_coords": true
+    }
+]
