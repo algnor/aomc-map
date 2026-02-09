@@ -39,7 +39,7 @@ export async function setupLayers(map) {
             tileSize: 512,
             attribution: '©AOMC Players',
             subdomains: "abcd",
-        }).addTo(map);
+        })
 
         if (first) {
             tileLayer.addTo(map)
