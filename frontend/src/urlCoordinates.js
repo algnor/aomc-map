@@ -27,5 +27,5 @@ function handleMove(e) {
         zoom: zoom
     })
     
-    history.replaceState(null, "", `?${params}`)
+    window.history.replaceState({}, "", `?${params}`);
 }

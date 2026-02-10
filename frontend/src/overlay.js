@@ -32,6 +32,10 @@ export async function setupOverlay(map, layerControl) {
     const res = await fetch("api/overlay.json")
     const data = await res.json()
     const layers = data["layers"]
+
+    const res2 = await fetch("static/dimensions.json")
+    /** @type {[]} */
+    const dims = await res2.json()
     // Add refresh button
     var refreshButton = new RefreshButton()
     refreshButton.addTo(map)
@@ -39,15 +43,16 @@ export async function setupOverlay(map, layerControl) {
     let activeOverlays = []
 
 
-map.on("baselayerchange", (e) => {
-    const params = new URLSearchParams(window.location.search);
-    params.set("dim", e["name"]);
-    window.history.replaceState({}, "", `?${params}`);
-    
-    addLayers(map, e["name"]);
-});
+    map.on("baselayerchange", (e) => {
+        const params = new URLSearchParams(window.location.search);
+        params.set("dim", e["name"]);
+        window.history.replaceState({}, "", `?${params}`);
 
-    addLayers(map, "overworld")
+        addLayers(map, e["name"]);
+    });
+    const params = new URLSearchParams(window.location.search)
+    const dim = params.get("dim") || dims[0]["name"]
+    addLayers(map, dim)
 
     function clearOverlays() {
         activeOverlays.forEach((layerGroup) => {
