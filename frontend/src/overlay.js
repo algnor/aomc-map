@@ -39,9 +39,14 @@ export async function setupOverlay(map, layerControl) {
     let activeOverlays = []
 
 
-    map.on("baselayerchange", (e) => {
-        addLayers(map, e["name"])
-    })
+map.on("baselayerchange", (e) => {
+    const params = new URLSearchParams(window.location.search);
+    params.set("dim", e["name"]);
+    window.history.replaceState({}, "", `?${params}`);
+    
+    addLayers(map, e["name"]);
+});
+
     addLayers(map, "overworld")
 
     function clearOverlays() {

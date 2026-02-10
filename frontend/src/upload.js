@@ -1,4 +1,4 @@
-import { Control, DomEvent, DomUtil } from "leaflet";
+import { Control, DomEvent, DomUtil, Map } from "leaflet";
 
 const res = await fetch("static/dimensions.json")
 /** @type {[]} */
@@ -11,6 +11,10 @@ layers.forEach((dim) => {
 })
 
 
+/**
+ * 
+ * @param {Map} map 
+ */
 export function setupUpload(map) {
     const UploadButton = Control.extend({
         options: { position: 'topleft' },
@@ -30,16 +34,15 @@ export function setupUpload(map) {
     new UploadButton().addTo(map);
 
     function openModal() {
+        const params = new URLSearchParams(window.location.search)
+        const dim = params.get("dim") || layers[0]["name"]
         const modal = document.createElement('div');
         modal.className = 'upload-modal';
         modal.innerHTML = `
             <span class="close">&times;</span>
             <h3>Upload Map Data</h3>
             <div>
-                <label>Dimension:</label>
-                <select id="dim-select">
-                    ${dimensions.map(d => `<option value="${d}">${d}</option>`).join('')}
-                </select>
+                <label>Dimension: <b>${dim}</b></label>
             </div>
             <input type="file" id="file-input" multiple accept=".png,.zip" style="margin:0.5rem 0">
             <pre id="log">Select files to upload</pre>
@@ -48,20 +51,28 @@ export function setupUpload(map) {
 
         const log = modal.querySelector('#log');
         const fileInput = modal.querySelector('#file-input');
-        const dimSelect = modal.querySelector('#dim-select');
 
         modal.querySelector('.close').onclick = () => modal.remove();
+        
+        map.on("baselayerchange", (e) => {
+            modal.remove()
+            map.off("baselayerchange", modal.remove)
+        })
 
         fileInput.onchange = async () => {
             const files = fileInput.files;
             if (!files.length) return;
 
-            const dim = dimSelect.value;
             log.textContent = '';
+
+            if (!confirm(`Your are uploading ${files.length} file(s) to ${dim}\nDo you want to proceed?`)) {
+                modal.remove()
+                return
+            }
 
             // Upload
             for (const file of files) {
-                log.textContent += `Uploading ${file.name}...     `;
+                log.textContent += `Uploading ${file.name}...  `;
                 const formData = new FormData();
                 formData.append('file', file);
                 try {
@@ -69,7 +80,7 @@ export function setupUpload(map) {
                 } catch (e) {
                     log.textContent += `  Error: ${e.message}\n`;
                 }
-                log.textContent += `(done)`;
+                log.textContent += `(Done!) \n`;
             }
 
             // Process

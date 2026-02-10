@@ -28,8 +28,13 @@ export async function setupLayers(map) {
         }
     }
 
+
+    const params = new URLSearchParams(window.location.search)
+    let selected = ""
+    if (params.has("dim")) {
+        selected = params.get("dim")
+    }
     
-    let first = true
     layers.forEach((layer) => {
         const tileLayer = new MinecraftTileLayer(`https://{s}.aomc-map.game.algot.net/map/${layer["name"]}/{z}/{x}_{y}.png?s={s}`, {
             maxNativeZoom: 9,
@@ -40,12 +45,12 @@ export async function setupLayers(map) {
             attribution: '©AOMC Players',
             subdomains: "abcd",
         })
-
-        if (first) {
-            tileLayer.addTo(map)
-            first = false
-        }
         layerControls.addBaseLayer(tileLayer, layer["name"])
+        if (selected === layer["name"] || selected === "") {
+            tileLayer.addTo(map)
+            selected = layer["name"]
+            console.log(params.get("dim"))
+        }
     })
 
     return layerControls
