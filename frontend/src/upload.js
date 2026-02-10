@@ -61,7 +61,7 @@ export function setupUpload(map) {
 
             // Upload
             for (const file of files) {
-                log.textContent += `Uploading ${file.name}...\n`;
+                log.textContent += `Uploading ${file.name}...     `;
                 const formData = new FormData();
                 formData.append('file', file);
                 try {
@@ -69,6 +69,7 @@ export function setupUpload(map) {
                 } catch (e) {
                     log.textContent += `  Error: ${e.message}\n`;
                 }
+                log.textContent += `(done)`;
             }
 
             // Process
