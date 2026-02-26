@@ -19,3 +19,12 @@
   image-rendering: pixelated;                 /* CSS4 Proposed  */
   -ms-interpolation-mode: nearest-neighbor;   /* IE8+           */
 }
+
+.no-pointer {
+  cursor: crosshair;
+}
+
+.no-pointer,
+.no-pointer img {
+    cursor: grab !important;
+}

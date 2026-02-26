@@ -74,6 +74,11 @@ export async function setupOverlay(map, layerControl) {
     function addLayers(map, target_dim) {
         clearOverlays()
 
+        /**
+         * @type {HTMLElement}
+         */
+        let canvas = null
+
         console.log("adding overlays for:", target_dim)
         layers.forEach(layer => {
 
@@ -85,9 +90,10 @@ export async function setupOverlay(map, layerControl) {
                 dim = layer["name"].split(" ")[0].substring(1)
             }
 
-            if (target_dim !== dim) return
+            // Regex blackmagic fuckery
+            const name = layer["name"].replace(/@\w+|#\w+/g, '').trim().replace(/\s+/g, ' ');
 
-            console.log(dim)
+            if (target_dim !== dim) return
 
             let layerColor = colors[layer["color"] || "white"]
             let iconUrl = `/static/markers/${layerColor[1]}`
@@ -98,8 +104,10 @@ export async function setupOverlay(map, layerControl) {
             })
             layer["features"].forEach(feature => {
                 let color = layerColor
+                let featureName = feature["name"]
                 if (feature["name"].indexOf("#") > -1) {
                     color = colors[feature["name"].split("#")[1]]
+                    featureName = feature["name"].split("#")[0]
                 }
                 let newFeature = null
                 if (feature["type"] === "Pin") {
@@ -158,9 +166,12 @@ export async function setupOverlay(map, layerControl) {
 
                 // global to all features
                 if (feature["name"])
-                    newFeature.bindTooltip(feature["name"])
+                    newFeature.bindTooltip(featureName)
                 if (feature["popup"])
                     newFeature.bindPopup(feature["popup"], { maxWidth: 1000 })
+                else {
+                    newFeature.options.className = "no-pointer"
+                }
 
                 if (feature["type"] === "Pin") {
                     markers.addLayer(newFeature)
@@ -176,11 +187,10 @@ export async function setupOverlay(map, layerControl) {
             layerGroup.on("remove", function (e) {
                 markers.remove()
             })
-            if (layer["name"][0] != ".") {
+            if (name[0] != ".") {
                 layerGroup.addTo(map)
             }
-            layerControl.addOverlay(layerGroup, layer["name"])
-
+            layerControl.addOverlay(layerGroup, name)
             activeOverlays.push(layerGroup)
         });
     }

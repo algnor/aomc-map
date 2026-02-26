@@ -25,8 +25,7 @@ Object.assign(MinecraftCRS, {
 });
 
 const canvasRenderer = new Canvas({
-  tolerance: 5,
-
+  tolerance: 5
 });
 
 const map = new Map('map', {
@@ -39,8 +38,12 @@ const map = new Map('map', {
 
 new Control.Scale({imperial: false}).addTo(map)
 
+map.whenReady(async () => {
 const layerControls = await setupLayers(map)
+
+
 setupMeasureTool(map)
 setupOverlay(map, layerControls)
 setupUrlCoordinates(map)
 setupUpload(map)
+})
