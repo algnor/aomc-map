@@ -1,4 +1,4 @@
-import { Map, Control, DomEvent, DomUtil, Marker, LayerGroup, Icon, Polyline, Polygon, Layer, TileLayer } from "leaflet";
+import { Map, Control, DomEvent, DomUtil, Marker, LayerGroup, Icon, Polyline, Polygon } from "leaflet";
 import "@kristjan.esperanto/leaflet.markercluster/dist/MarkerCluster.css";
 import "@kristjan.esperanto/leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { MarkerClusterGroup } from "@kristjan.esperanto/leaflet.markercluster";
@@ -65,6 +65,15 @@ export async function setupOverlay(map, layerControl) {
         activeOverlays = []
     }
 
+    function setMouseType(e, mode) {
+        if (e.target instanceof Polyline) {
+            e.target._renderer._container.style.cursor = mode
+        }
+        else if (e.target instanceof Marker) {
+            e.target._icon.style.cursor = mode
+        }
+    }
+
     //addLayers(map, "overworld")
     /**
      * 
@@ -77,7 +86,6 @@ export async function setupOverlay(map, layerControl) {
         /**
          * @type {HTMLElement}
          */
-        let canvas = null
 
         console.log("adding overlays for:", target_dim)
         layers.forEach(layer => {
@@ -113,8 +121,14 @@ export async function setupOverlay(map, layerControl) {
                 if (feature["type"] === "Pin") {
                     newFeature = new Marker(
                         feature["coordinate"],
-                        { icon: icon }
+                        { icon: icon}
                     )
+                    newFeature.on('pointerover', function (e) {
+                        if (feature["popup"])
+                            setMouseType(e, "help")
+                        else
+                            setMouseType(e, "default")
+                    });
                 }
 
                 if (feature["type"] === "Line") {
@@ -125,12 +139,18 @@ export async function setupOverlay(map, layerControl) {
                     newFeature.on('pointerover', function (e) {
                         var layer = e.target;
 
+                        if (feature["popup"])
+                            setMouseType(e, "help")
+                        else
+                            setMouseType(e, "default")
+
                         layer.setStyle({
                             weight: 8,
                         });
                     });
                     newFeature.on('pointerout', function (e) {
                         var layer = e.target;
+                        setMouseType(e, "")
 
                         layer.setStyle({
                             weight: 3,
@@ -146,12 +166,19 @@ export async function setupOverlay(map, layerControl) {
                     newFeature.on('pointerover', function (e) {
                         var layer = e.target;
 
+                        if (feature["popup"])
+                            setMouseType(e, "help")
+                        else
+                            setMouseType(e, "grab")
+
+
                         layer.setStyle({
                             weight: 5,
                         });
                     });
                     newFeature.on('pointerout', function (e) {
                         var layer = e.target;
+                        setMouseType(e, "")
 
                         layer.setStyle({
                             weight: 3,

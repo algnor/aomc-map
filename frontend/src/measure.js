@@ -167,11 +167,13 @@ export function setupMeasureTool(map) {
         let button = document.getElementById("copyButton")
         let clipboard = document.getElementById("clipboard")
         if (copyMode) {
+            map.getContainer().style.cursor = "crosshair"
             stopInfo()
             button.classList.add("copyActive")
             clipboard.style.display = "block"
             clipboard.innerHTML = "&lt;empty&gt;"
         } else {
+            map.getContainer().style.cursor = "grab"
             button.classList.remove("copyActive")
             clipboard.style.display = "none"
         }
