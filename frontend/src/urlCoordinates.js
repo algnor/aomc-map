@@ -21,11 +21,10 @@ function handleMove(e) {
     const center = e.target.getCenter()
     const zoom = e.target.getZoom()
     
-    const params = new URLSearchParams({
-        x: Math.round(center.lng),
-        z: Math.round(center.lat),
-        zoom: zoom
-    })
+    const params = new URLSearchParams(window.location.search)
+    params.set('x', Math.round(center.lng))
+    params.set('z', Math.round(center.lat))
+    params.set('zoom', zoom)
     
     window.history.replaceState({}, "", `?${params}`);
 }
