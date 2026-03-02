@@ -125,8 +125,8 @@ try:
         og_tags = f"""
         <meta property="og:title" content="AOMC Webmap — {dim} ({x}, {z})">
         <meta property="og:description" content="Zoom level {zoom}">
-        <meta property="og:image" content="https://yourdomain.com/api/map/preview?dim={dim}&x={x}&z={z}&zoom={zoom}">
-        <meta property="og:url" content="https://yourdomain.com/?dim={dim}&x={x}&z={z}&zoom={zoom}">
+        <meta property="og:image" content="https://map.diorite.xyz/api/map/preview?dim={dim}&x={x}&z={z}&zoom={zoom}">
+        <meta property="og:url" content="https://map.diorite.xyz/?dim={dim}&x={x}&z={z}&zoom={zoom}">
         <meta property="og:type" content="website">
         """
         html = frontend_html.replace("<head>", f"<head>{og_tags}", 1)
