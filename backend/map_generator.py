@@ -235,12 +235,17 @@ async def map_preview(x: int=0, z: int=0, zoom: int = 0, dim: str = DIMENSION_NA
     if dim not in DIMENSION_NAMES:
         raise HTTPException(status_code=400, detail=f"Invalid dimension: {dim}")
 
-    zoom_dir = OUTPUT_DIR / dim / str(zoom)
+    zoom = zoom - 1
+
+    tile_zoom = max(0, min(9 - zoom, 9))
+    extra_zoom = max(0, zoom - 9)  # how many levels past max tile detail
+
+    zoom_dir = OUTPUT_DIR / dim / str(tile_zoom)
     if not zoom_dir.exists():
         raise HTTPException(status_code=404, detail="No tiles for this dimension/zoom")
 
     tile_size = 512
-    world_units_per_tile = tile_size * (2 ** zoom)
+    world_units_per_tile = tile_size * (2 ** tile_zoom)
 
     origin_tile_x = math.floor(x / world_units_per_tile) * world_units_per_tile
     origin_tile_z = math.floor(z / world_units_per_tile) * world_units_per_tile
@@ -258,11 +263,14 @@ async def map_preview(x: int=0, z: int=0, zoom: int = 0, dim: str = DIMENSION_NA
             except:
                 pass
 
-    # Scale pixel offset: (x - origin_tile_x) world units / (2^zoom) = pixels within tile
-    cx = tile_size + (x - origin_tile_x) // (2 ** zoom)
-    cz = tile_size + (z - origin_tile_z) // (2 ** zoom)
+    cx = tile_size + (x - origin_tile_x) // (2 ** tile_zoom)
+    cz = tile_size + (z - origin_tile_z) // (2 ** tile_zoom)
 
-    output = canvas.crop((cx - 512, cz - 512, cx + 512, cz + 512))
+    # Crop a smaller region then upscale to simulate extra zoom
+    half = 512 // (2 ** extra_zoom)
+    half = max(1, half)
+    region = canvas.crop((cx - half, cz - half, cx + half, cz + half))
+    output = region.resize((1024, 1024), Image.NEAREST)
 
     buf = io.BytesIO()
     output.save(buf, format="PNG")
