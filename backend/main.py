@@ -1,5 +1,7 @@
+import json
 from typing import Literal, Union
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
@@ -108,6 +110,28 @@ def get_overlay_from_sheets():
 
 
 try:
+    DIMENSIONS = json.loads(open("./static/dimensions.json").read())
+    DIMENSION_NAMES: list[str] = [d["name"] for d in DIMENSIONS]
+    
+    frontend_html = (Path(frontend) / "index.html").read_text()
+
+    @app.get("/")
+    async def index(
+        dim: str = next(iter(DIMENSION_NAMES)),
+        x: int = 0,
+        z: int = 0,
+        zoom: int = 0
+    ):
+        og_tags = f"""
+        <meta property="og:title" content="AOMC Webmap — {dim} ({x}, {z})">
+        <meta property="og:description" content="Zoom level {zoom}">
+        <meta property="og:image" content="https://yourdomain.com/api/map/preview?dim={dim}&x={x}&z={z}&zoom={zoom}">
+        <meta property="og:url" content="https://yourdomain.com/?dim={dim}&x={x}&z={z}&zoom={zoom}">
+        <meta property="og:type" content="website">
+        """
+        html = frontend_html.replace("<head>", f"<head>{og_tags}", 1)
+        return HTMLResponse(html)
+
     app.mount("/", StaticFiles(directory=frontend, html=True))
 except:
     pass

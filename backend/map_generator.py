@@ -5,14 +5,12 @@ import math
 from PIL import Image
 import zipfile
 import io
-import tempfile
-import shutil
 import numpy as np
 import json
 import asyncio
 
 DIMENSIONS = json.loads(open("./static/dimensions.json").read())
-DIMENSION_NAMES = {d["name"] for d in DIMENSIONS}
+DIMENSION_NAMES: list[str] = [d["name"] for d in DIMENSIONS]
 
 router = APIRouter(prefix="/api/map", tags=["map"])
 
@@ -231,3 +229,42 @@ async def process_all():
         yield "Processing complete\n"
 
     return StreamingResponse(stream_log(), media_type="text/plain")
+
+@router.get("/preview")
+async def map_preview(x: int=0, z: int=0, zoom: int = 0, dim: str = DIMENSION_NAMES[0]):
+    if dim not in DIMENSION_NAMES:
+        raise HTTPException(status_code=400, detail=f"Invalid dimension: {dim}")
+
+    zoom_dir = OUTPUT_DIR / dim / str(zoom)
+    if not zoom_dir.exists():
+        raise HTTPException(status_code=404, detail="No tiles for this dimension/zoom")
+
+    tile_size = 512
+    world_units_per_tile = tile_size * (2 ** zoom)
+
+    origin_tile_x = math.floor(x / world_units_per_tile) * world_units_per_tile
+    origin_tile_z = math.floor(z / world_units_per_tile) * world_units_per_tile
+
+    canvas = Image.new("RGB", (tile_size * 3, tile_size * 3), (30, 30, 30))
+
+    for row in range(-1, 2):
+        for col in range(-1, 2):
+            tx = origin_tile_x + col * world_units_per_tile
+            tz = origin_tile_z + row * world_units_per_tile
+            tile_path = zoom_dir / f"{int(tx)}_{int(tz)}.png"
+            try:
+                img = Image.open(tile_path).convert("RGB")
+                canvas.paste(img, ((col + 1) * tile_size, (row + 1) * tile_size))
+            except:
+                pass
+
+    # Scale pixel offset: (x - origin_tile_x) world units / (2^zoom) = pixels within tile
+    cx = tile_size + (x - origin_tile_x) // (2 ** zoom)
+    cz = tile_size + (z - origin_tile_z) // (2 ** zoom)
+
+    output = canvas.crop((cx - 512, cz - 512, cx + 512, cz + 512))
+
+    buf = io.BytesIO()
+    output.save(buf, format="PNG")
+    buf.seek(0)
+    return StreamingResponse(buf, media_type="image/png")
