@@ -9,4 +9,5 @@ dependencies = [
     "pillow",
     "numpy",
     "fastapi-analytics>=1.2.5",
+    "playwright"
 ]

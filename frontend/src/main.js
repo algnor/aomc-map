@@ -10,6 +10,7 @@ import { setupOverlay } from './overlay'
 import { setupUrlCoordinates } from './urlCoordinates'
 import { setupUpload } from './upload'
 import "./upload.css"
+import { setupEmbed } from './embed'
 
 console.log(L.version)
 
@@ -46,4 +47,5 @@ setupMeasureTool(map)
 setupOverlay(map, layerControls)
 setupUrlCoordinates(map)
 setupUpload(map)
+setupEmbed(map)
 })

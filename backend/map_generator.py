@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, HTTPException
+from fastapi import APIRouter, Response, UploadFile, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from pathlib import Path
 import math
@@ -230,49 +230,28 @@ async def process_all():
 
     return StreamingResponse(stream_log(), media_type="text/plain")
 
+from playwright.async_api import async_playwright
+_browser = None
+
+async def get_browser():
+    global _browser
+    if _browser is None:
+        pw = await async_playwright().start()
+        _browser = await pw.chromium.launch()
+    return _browser
+
+async def capture_map(x: int, z: int, zoom, dim) -> bytes:
+    browser = await get_browser()
+    page = await browser.new_page(viewport={"width": 1200, "height": 630})
+    await page.goto(f"http://backend-prod:8000/?x={x}&z={z}&zoom={zoom}&dim={dim}&embed=true", wait_until="networkidle")
+    screenshot = await page.screenshot(type="png")
+    await page.close()
+    return screenshot
+
 @router.get("/preview")
-async def map_preview(x: int=0, z: int=0, zoom: int = 0, dim: str = DIMENSION_NAMES[0]):
+async def map_preview(x: int=0, z: int=0, zoom: int = 8, dim: str = DIMENSION_NAMES[0]):
     if dim not in DIMENSION_NAMES:
         raise HTTPException(status_code=400, detail=f"Invalid dimension: {dim}")
-
-    zoom = zoom - 1
-
-    tile_zoom = max(0, min(9 - zoom, 9))
-    extra_zoom = max(0, zoom - 9)  # how many levels past max tile detail
-
-    zoom_dir = OUTPUT_DIR / dim / str(tile_zoom)
-    if not zoom_dir.exists():
-        raise HTTPException(status_code=404, detail="No tiles for this dimension/zoom")
-
-    tile_size = 512
-    world_units_per_tile = tile_size * (2 ** tile_zoom)
-
-    origin_tile_x = math.floor(x / world_units_per_tile) * world_units_per_tile
-    origin_tile_z = math.floor(z / world_units_per_tile) * world_units_per_tile
-
-    canvas = Image.new("RGB", (tile_size * 3, tile_size * 3), (30, 30, 30))
-
-    for row in range(-1, 2):
-        for col in range(-1, 2):
-            tx = origin_tile_x + col * world_units_per_tile
-            tz = origin_tile_z + row * world_units_per_tile
-            tile_path = zoom_dir / f"{int(tx)}_{int(tz)}.png"
-            try:
-                img = Image.open(tile_path).convert("RGB")
-                canvas.paste(img, ((col + 1) * tile_size, (row + 1) * tile_size))
-            except:
-                pass
-
-    cx = tile_size + (x - origin_tile_x) // (2 ** tile_zoom)
-    cz = tile_size + (z - origin_tile_z) // (2 ** tile_zoom)
-
-    # Crop a smaller region then upscale to simulate extra zoom
-    half = 512 // (2 ** extra_zoom)
-    half = max(1, half)
-    region = canvas.crop((cx - half, cz - half, cx + half, cz + half))
-    output = region.resize((1024, 1024), Image.NEAREST)
-
-    buf = io.BytesIO()
-    output.save(buf, format="PNG")
-    buf.seek(0)
-    return StreamingResponse(buf, media_type="image/png")
+    print("Generating embed", flush=True)
+    png = await capture_map(x, z, zoom, dim)
+    return Response(png, media_type="image/png")

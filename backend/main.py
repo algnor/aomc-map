@@ -71,7 +71,6 @@ def get_overlay_from_sheets():
                 popup: str = row[2]
                 coord_string: str = row[3]
                 coord = []
-                print(row)
                 if type == "Pin":
                     coord = [int(c) for c in coord_string.split()]
                     coord.reverse()
@@ -80,7 +79,6 @@ def get_overlay_from_sheets():
                 if type in ["Line", "Polygon"]:
                     coord = []
                     for pair in coord_string.split(","):
-                        print(pair)
                         part = [int(c) for c in pair.strip().split(" ")]
                         part.reverse()
                         assert len(part) == 2, f"incorrect coordinate formatting, expected 2 values, found {len(part)}"
@@ -123,11 +121,17 @@ try:
         zoom: int = 0
     ):
         og_tags = f"""
-        <meta property="og:title" content="AOMC Webmap — {dim} ({x}, {z})">
-        <meta property="og:description" content="Zoom level {zoom}">
-        <meta property="og:image" content="https://map.diorite.xyz/api/map/preview?dim={dim}&x={x}&z={z}&zoom={zoom}">
-        <meta property="og:url" content="https://map.diorite.xyz/?dim={dim}&x={x}&z={z}&zoom={zoom}">
-        <meta property="og:type" content="website">
+<meta property="og:title" content="AOMC Webmap — {dim} ({x}, {z})">
+<meta property="og:description" content="Zoom level {zoom}">
+<meta property="og:image" content="https://map.diorite.xyz/api/map/preview?dim={dim}&x={x}&z={z}&zoom={zoom}">
+<meta property="og:url" content="https://map.diorite.xyz/?dim={dim}&x={x}&z={z}&zoom={zoom}">
+<meta property="og:type" content="website">
+
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:url" content="https://map.diorite.xyz/?dim={dim}&x={x}&z={z}&zoom={zoom}" />
+<meta property="twitter:title" content="AOMC Webmap — {dim} ({x}, {z})" />
+<meta property="twitter:description" content="Zoom level {zoom}"" />
+<meta property="twitter:image" content="https://map.diorite.xyz/api/map/preview?dim={dim}&x={x}&z={z}&zoom={zoom}"" />
         """
         html = frontend_html.replace("<head>", f"<head>{og_tags}", 1)
         return HTMLResponse(html)

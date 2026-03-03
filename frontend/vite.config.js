@@ -8,6 +8,7 @@ export default defineConfig({
             '/api': 'http://backend:8000',
             '/map': 'http://backend:8000',
             '/static': 'http://backend:8000',
-        }
+        },
+        allowedHosts: ["frontend"]
     }
 })

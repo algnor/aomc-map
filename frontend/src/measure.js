@@ -198,6 +198,12 @@ export function setupMeasureTool(map) {
         },
         onRemove: function (map) { },
     });
+
+    const params = new URLSearchParams(window.location.search)
+    const x = params.get("x") || 0
+    const y = params.get("y") || 0
+    coordText.innerHTML = `x: ${x} z: ${y}`
+
     const copyCoordinateButton = new CopyCoordinateButton()
     copyCoordinateButton.addTo(map)
 }
