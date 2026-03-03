@@ -116,22 +116,34 @@ try:
     @app.get("/")
     async def index(
         dim: str = next(iter(DIMENSION_NAMES)),
-        x: int = 0,
-        z: int = 0,
-        zoom: int = 0
+        x: int | None = 0,
+        z: int | None = 0,
+        zoom: int | None = None
     ):
+        query = ""
+        if (x and z):
+            query += f"x={x}&z={z}"
+        if (zoom):
+            query += f"&zoom={zoom}"
+        if (dim):
+            query += f"&dim={dim}"
+
+        base = "https://map.diorite.xyz"
+        url = base + "?" + query
+        img_url = base + "/api/map/preview?" + query
+
         og_tags = f"""
 <meta property="og:title" content="AOMC Webmap — {dim} ({x}, {z})">
 <meta property="og:description" content="Zoom level {zoom}">
-<meta property="og:image" content="https://map.diorite.xyz/api/map/preview?dim={dim}&x={x}&z={z}&zoom={zoom}">
-<meta property="og:url" content="https://map.diorite.xyz/?dim={dim}&x={x}&z={z}&zoom={zoom}">
+<meta property="og:image" content="{img_url}">
+<meta property="og:url" content="{url}">
 <meta property="og:type" content="website">
 
 <meta property="twitter:card" content="summary_large_image" />
-<meta property="twitter:url" content="https://map.diorite.xyz/?dim={dim}&x={x}&z={z}&zoom={zoom}" />
+<meta property="twitter:url" content="{url}" />
 <meta property="twitter:title" content="AOMC Webmap — {dim} ({x}, {z})" />
-<meta property="twitter:description" content="Zoom level {zoom}"" />
-<meta property="twitter:image" content="https://map.diorite.xyz/api/map/preview?dim={dim}&x={x}&z={z}&zoom={zoom}"" />
+<meta property="twitter:description" content="Zoom level {zoom}" />
+<meta property="twitter:image" content="{img_url}" />
         """
         html = frontend_html.replace("<head>", f"<head>{og_tags}", 1)
         return HTMLResponse(html)
