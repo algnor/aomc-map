@@ -195,7 +195,7 @@ export async function setupOverlay(map, layerControl) {
                 if (feature["name"])
                     newFeature.bindTooltip(featureName)
                 if (feature["popup"])
-                    newFeature.bindPopup(feature["popup"], { maxWidth: 1000 })
+                    newFeature.bindPopup(feature["popup"], {className: "popup-width-fix"})
                 else {
                     newFeature.options.className = "no-pointer"
                 }

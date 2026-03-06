@@ -28,3 +28,7 @@
 .no-pointer img {
     cursor: grab !important;
 }
+
+.popup-width-fix {
+  width: max-content;
+}
