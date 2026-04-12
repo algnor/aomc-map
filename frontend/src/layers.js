@@ -36,15 +36,27 @@ export async function setupLayers(map) {
     }
     
     layers.forEach((layer) => {
-        const tileLayer = new MinecraftTileLayer(`https://{s}.map.diorite.xyz/map/${layer["name"]}/{z}/{x}_{y}.png?s={s}`, {
-            maxNativeZoom: 9,
-            minNativeZoom: 0,
-            maxZoom: 15,
-            minZoom: 0,
-            tileSize: 512,
-            attribution: '©AOMC Players',
-            subdomains: "abcd",
-        })
+        const domain = window.location.hostname
+        if (domain === "aomc-map.game.algot.net") {
+            const tileLayer = new MinecraftTileLayer(`https://${domain}/map/${layer["name"]}/{z}/{x}_{y}.png?s={s}`, {
+                maxNativeZoom: 9,
+                minNativeZoom: 0,
+                maxZoom: 15,
+                minZoom: 0,
+                tileSize: 512,
+                attribution: '©AOMC Players',
+            })
+        } else {
+            const tileLayer = new MinecraftTileLayer(`https://{s}.map.diorite.xyz/map/${layer["name"]}/{z}/{x}_{y}.png?s={s}`, {
+                maxNativeZoom: 9,
+                minNativeZoom: 0,
+                maxZoom: 15,
+                minZoom: 0,
+                tileSize: 512,
+                attribution: '©AOMC Players',
+                subdomains: "abcd",
+            })
+        }
         layerControls.addBaseLayer(tileLayer, layer["name"])
         if (selected === layer["name"] || selected === "") {
             tileLayer.addTo(map)
