@@ -38,7 +38,7 @@ export async function setupLayers(map) {
     layers.forEach((layer) => {
         const domain = window.location.hostname
         if (domain === "aomc-map.game.algot.net") {
-            const tileLayer = new MinecraftTileLayer(`https://${domain}/map/${layer["name"]}/{z}/{x}_{y}.png?s={s}`, {
+            var tileLayer = new MinecraftTileLayer(`https://${domain}/map/${layer["name"]}/{z}/{x}_{y}.png?s={s}`, {
                 maxNativeZoom: 9,
                 minNativeZoom: 0,
                 maxZoom: 15,
@@ -47,7 +47,7 @@ export async function setupLayers(map) {
                 attribution: '©AOMC Players',
             })
         } else {
-            const tileLayer = new MinecraftTileLayer(`https://{s}.map.diorite.xyz/map/${layer["name"]}/{z}/{x}_{y}.png?s={s}`, {
+            var tileLayer = new MinecraftTileLayer(`https://{s}.map.diorite.xyz/map/${layer["name"]}/{z}/{x}_{y}.png?s={s}`, {
                 maxNativeZoom: 9,
                 minNativeZoom: 0,
                 maxZoom: 15,
