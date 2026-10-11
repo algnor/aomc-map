@@ -41,6 +41,12 @@ export function setupUpload(map) {
         modal.innerHTML = `
             <span class="close">&times;</span>
             <h3>Upload Map Data</h3>
+            <ol>
+                <li><b>Turn off resource packs</b> if you have some enabled.</li>
+                <li>In Xaero's World Map, drag right click over the area and export as PNG.</li>
+                <li>Set <b>Multiple Unscaled Images</b> to ON, then confirm.</li>
+                <li>Select the exported images. They are usually saved here:<br><code>.minecraft/your_instance_folder/map exports/</code></li>
+            </ol>
             <div>
                 <label>Dimension: <b>${dim}</b></label>
             </div>
